@@ -18,6 +18,7 @@ final class ViewModel {
     var countdownToWashString: String = "加载中..."
     var targetWashTime: Date = Date()
     var isWashTime = false
+    var isWashed = false
     
     private var timer: AnyCancellable?
     private var washTimer: AnyCancellable?
@@ -42,6 +43,7 @@ final class ViewModel {
             .autoconnect()
             .sink { [weak self] _ in
                 self?.calculateCountdownToWash()
+                self?.checkIsWashedTime()
             }
     }
     deinit {
@@ -90,6 +92,19 @@ final class ViewModel {
             self.countdownToWashString = String(format: "%02d:%02d:%02d", minutes, seconds, centiseconds)
         } else {
             self.countdownToWashString = "开始运动！"
+        }
+    }
+    /// 检查是否到时
+    private func checkIsWashedTime() {
+        let calendar = Calendar.current
+        let currentDateHour = calendar.component(.hour, from: self.currentDate)
+        let currentDateMinute = calendar.component(.minute, from: self.currentDate)
+        let currentDateSecond = calendar.component(.second, from: self.currentDate)
+        let sportTimeHour = calendar.component(.hour, from: self.targetWashTime)
+        let sportTimeMinute = calendar.component(.minute, from: self.targetWashTime)
+        let sportTimeSecond = calendar.component(.second, from: self.targetWashTime)
+        if currentDateHour == sportTimeHour && currentDateMinute == sportTimeMinute && currentDateSecond == sportTimeSecond {
+            self.isWashed = true
         }
     }
 }

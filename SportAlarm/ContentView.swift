@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var isShowSettingsView = false
     @State private var isShowAlert = false
     @State private var isShowRuning = false
+    @State private var isShowWashedWarning = false
     @State private var count = 0
     @AppStorage("sportTime") var sportTime: Date = Date()
     
@@ -34,12 +35,12 @@ struct ContentView: View {
         //            }
         //            .buttonStyle(.glass)
         //        }
-        .overlay(alignment: .topLeading) {
-            Button("开发切换", systemImage: "switch.2") {
-                viewModel.isAlarming.toggle()
-            }
-            .buttonStyle(.glass)
-        }
+        //        .overlay(alignment: .topLeading) {
+        //            Button("开发切换", systemImage: "switch.2") {
+        //                viewModel.isAlarming.toggle()
+        //            }
+        //            .buttonStyle(.glass)
+        //        }
         .padding()
         .animation(.default, value: viewModel.isAlarming)
         .sheet(isPresented: $isShowSettingsView) {
@@ -51,6 +52,11 @@ struct ContentView: View {
             //
         }, message: {
             Text("检测到位置没有变化，请出门跑步！")
+        })
+        .alert("⚠️ 警告", isPresented: $isShowWashedWarning, actions: {
+            //
+        }, message: {
+            Text("不能重复洗漱，赶紧出门跑步吧！")
         })
         .onChange(of: sportTime) { oldValue, newValue in
             viewModel.sportTime = newValue
@@ -75,13 +81,23 @@ struct ContentView: View {
         
         Spacer()
         if viewModel.isWashTime {
-            Text(viewModel.countdownToWashString)
-                .foregroundStyle(.secondary)
-                .bold()
+            if viewModel.isWashed {
+                Text("洗漱完成！")
+                    .foregroundStyle(.secondary)
+                    .bold()
+            } else {
+                Text(viewModel.countdownToWashString)
+                    .foregroundStyle(.secondary)
+                    .bold()
+            }
         }
         Button {
-            viewModel.isWashTime.toggle()
-            viewModel.startWashTimer()
+            if viewModel.isWashed {
+                isShowWashedWarning.toggle()
+            } else {
+                viewModel.isWashTime.toggle()
+                viewModel.startWashTimer()
+            }
         } label: {
             Text("洗漱")
                 .font(.title.bold())
