@@ -15,8 +15,12 @@ final class ViewModel {
     var currentDate = Date()
     var sportTime = Date()
     var remainingTimeString: String = "加载中..."
+    var countdownToWashString: String = "加载中..."
+    var targetWashTime: Date = Date()
+    var isWashTime = false
     
     private var timer: AnyCancellable?
+    private var washTimer: AnyCancellable?
     
     init() {
         startTimer()
@@ -28,12 +32,21 @@ final class ViewModel {
             .sink { [weak self] _ in
                 self?.currentDate = Date()
                 self?.calculateRemainingTime()
+                self?.calculateCountdownToWash()
                 self?.checkIsTime()
             }
     }
-    
+    func startWashTimer() {
+        self.targetWashTime = Date().addingTimeInterval(10 * 60)
+        washTimer = Timer.publish(every: 0.01, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.calculateCountdownToWash()
+            }
+    }
     deinit {
         timer?.cancel()
+        washTimer?.cancel()
     }
     
     /// 计算剩余时间
@@ -45,7 +58,7 @@ final class ViewModel {
             let minutes = (Int(interval) % 3600) / 60
             let seconds = Int(interval) % 60
             
-            self.remainingTimeString = "\(hours):\(minutes):\(seconds)"
+            self.remainingTimeString = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
         } else {
             self.remainingTimeString = "开始运动！"
         }
@@ -62,6 +75,21 @@ final class ViewModel {
         let sportTimeSecond = calendar.component(.second, from: self.sportTime)
         if currentDateHour == sportTimeHour && currentDateMinute == sportTimeMinute && currentDateSecond == sportTimeSecond {
             self.isAlarming = true
+        }
+    }
+    /// 计算洗漱倒计时
+    private func calculateCountdownToWash() {
+        let now = Date()
+        let interval = targetWashTime.timeIntervalSince(now)
+        if interval > 0 {
+            let totalCentiseconds = Int(interval * 100)
+            let minutes = (totalCentiseconds / 100) / 60
+            let seconds = (totalCentiseconds / 100) % 60
+            let centiseconds = totalCentiseconds % 100
+            
+            self.countdownToWashString = String(format: "%02d:%02d:%02d", minutes, seconds, centiseconds)
+        } else {
+            self.countdownToWashString = "开始运动！"
         }
     }
 }

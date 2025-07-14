@@ -10,23 +10,30 @@ import SwiftUI
 struct ContentView: View {
     @State private var viewModel = ViewModel()
     @State private var isShowSettingsView = false
+    @State private var isShowAlert = false
+    @State private var isShowRuning = false
+    @State private var count = 0
     @AppStorage("sportTime") var sportTime: Date = Date()
     
     var body: some View {
         VStack(spacing: 16) {
             if viewModel.isAlarming {
-                isAlarmingView
+                if isShowRuning {
+                    runningView
+                } else {
+                    isAlarmingView
+                }
             } else {
                 noAlarmingView
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .topTrailing) {
-            Button("设置", systemImage: "gear") {
-                isShowSettingsView.toggle()
-            }
-            .buttonStyle(.glass)
-        }
+        //        .overlay(alignment: .topTrailing) {
+        //            Button("设置", systemImage: "gear") {
+        //                isShowSettingsView.toggle()
+        //            }
+        //            .buttonStyle(.glass)
+        //        }
         .overlay(alignment: .topLeading) {
             Button("开发切换", systemImage: "switch.2") {
                 viewModel.isAlarming.toggle()
@@ -40,6 +47,11 @@ struct ContentView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
+        .alert("⚠️ 警告", isPresented: $isShowAlert, actions: {
+            //
+        }, message: {
+            Text("检测到位置没有变化，请出门跑步！")
+        })
         .onChange(of: sportTime) { oldValue, newValue in
             viewModel.sportTime = newValue
         }
@@ -47,7 +59,6 @@ struct ContentView: View {
             viewModel.sportTime = sportTime
         }
         .statusBar(hidden: true)
-        .colorScheme(.dark)
         .monospacedDigit()
         .fontDesign(.rounded)
     }
@@ -63,9 +74,14 @@ struct ContentView: View {
             .foregroundStyle(.white.opacity(0.8))
         
         Spacer()
-        
+        if viewModel.isWashTime {
+            Text(viewModel.countdownToWashString)
+                .foregroundStyle(.secondary)
+                .bold()
+        }
         Button {
-            
+            viewModel.isWashTime.toggle()
+            viewModel.startWashTimer()
         } label: {
             Text("洗漱")
                 .font(.title.bold())
@@ -77,7 +93,12 @@ struct ContentView: View {
         .padding(.horizontal)
         
         Button {
-            
+            if count == 3 {
+                isShowRuning.toggle()
+            } else {
+                count += 1
+                isShowAlert.toggle()
+            }
         } label: {
             Text("开始跑步")
                 .font(.title.bold())
@@ -100,9 +121,19 @@ struct ContentView: View {
             .foregroundStyle(.white.opacity(0.8))
         Spacer()
         Spacer()
-        Text("起床时间 \(viewModel.sportTime.formatted(date: .omitted, time: .shortened))")
-            .foregroundStyle(.secondary)
-            .bold()
+        Button {
+            isShowSettingsView.toggle()
+        } label: {
+            Text("起床时间 \(viewModel.sportTime.formatted(date: .omitted, time: .shortened))")
+                .foregroundStyle(.secondary)
+                .bold()
+        }
+        .buttonStyle(.glass)
+    }
+    
+    private var runningView: some View {
+        Label("运动中...", systemImage: "figure.run")
+            .font(.system(size: 60).bold())
     }
 }
 
